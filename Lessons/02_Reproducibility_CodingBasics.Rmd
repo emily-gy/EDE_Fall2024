@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 title: "2: Reproducibility and Coding Basics"
 subtitle: "Environmental Data Analytics"
 author: "John Fay and Luana Lima | Developed by Kateri Salk"
@@ -92,8 +97,8 @@ median(5, 4, 6, 4, 6)
 # Conditional statements
 4 > 5
 4 < 5
-4 != 5
-4 == 5
+4 != 5 # 4  is different from 5
+4 == 5 # 4 is equal to 5 (quality sign)
 
 ```
 
@@ -123,11 +128,13 @@ Importantly, you may never call an R object "data". This word is reserved for a 
 
 Run the first line of code below. Then, type in "long" and press `tab`. What happens?
 
-What happens if there is a typo in your code? Type the following in the R window: Long_name_for_illustration longnameforillustration
+What happens if there is a typo in your code? Type the following in the R window: Long_name_for_illustration 
+longnameforillustration
 
 ```{r}
-long_name_for_illustration <- 11
-
+long_name_for_illustration <- 11 
+# case sensitive
+# type long and tab shows the rest of the name
 ```
 
 ### Comments
@@ -145,11 +152,11 @@ Within your R code, it is often useful to include notes about your workflow. So 
 R functions are the major tool used in R. Functions can do virtually unlimited things within the R universe, but each function requires specific inputs that are provided under specific syntax. We will start with a simple function that is built into R, `seq`
 
 ```{r}
-seq(1, 10)
-ten_sequence <- seq(1, 10)
+seq(1, 10) #sequencing function
+ten_sequence <- seq(1, 10) #assign name
 ten_sequence
 
-seq(1, 10, 2) # from, to, by
+seq(1, 10, 2) # from 1, to 10, by 2
 ```
 
 The basic form of a function is `functionname()`, and the packages we will use in this class will use these basic forms. However, there may be situations when you will want to create your own function. Below is a description of how to write functions through the metaphor of creating a recipe (credit: @IsabellaGhement on Twitter).
@@ -160,6 +167,7 @@ Writing a function is like writing a recipe. Your function will need a recipe na
 functionname <- function(){
   
 }
+# this is a skeleton of function
 ```
 
 A single ingredient recipe:
@@ -169,7 +177,7 @@ A single ingredient recipe:
 recipe1 <- function(x){
   mix <- x*2
   return(mix)
-}
+} # recipe1 is a function of x. inside the function create object mix, and assign mix x*2, and return the object mix
 
 # Bake the recipe
 simplemeal <- recipe1(5)
@@ -190,22 +198,24 @@ recipe2 <- function(x){
 
 doublesimplemeal <- recipe2(6)
 doublesimplemeal
+# can use $ to define which object to look for, like doublesimplemeal$mix1
+ 
 ```
 
 Two double ingredient recipes, baked at the same time:
-
 ```{r}
 recipe3 <- function(x, f){
-  mix1 <- x*f
+  mix1 <-x*f
   mix2 <- x/f
-  return(list(mix1 = mix1, #comma indicates we continue onto the next line
+  return(list(mix1 = mix1,
               mix2 = mix2))
 }
 
-doublecomplexmeal <- recipe3(x = 5, f = 2)
+doublecomplexmeal <-recipe3(x = 5, f = 2)
 doublecomplexmeal
 doublecomplexmeal$mix1
 ```
+
 
 Make a recipe based on the ingredients you have
 
@@ -234,8 +244,9 @@ meal <- recipe4(4); meal
 meal2 <- recipe4(2); meal2
 meal3 <- recipe5(3); meal3
 
+# same as recipe4
 recipe6 <- function(x){
-  ifelse(x<3, x*2, x/2) #log_exp, if TRUE, if FALSE
+  ifelse(x<3, x*2, x/2) # ifelse has 3 maim arguments: logical expression, if TRUE, if FALSE
   
 }
 
