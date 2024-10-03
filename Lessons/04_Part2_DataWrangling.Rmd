@@ -32,7 +32,6 @@ NTL.nutrient.data <- read.csv("./Data/Raw/NTL-LTER_Lake_Nutrients_Raw.csv",strin
 colnames(NTL.phys.data.PeterPaul)
 dim(NTL.phys.data.PeterPaul)
 str(NTL.phys.data.PeterPaul)
-summary(NTL.phys.data.PeterPaul$comments)
 class(NTL.phys.data.PeterPaul$sampledate)
 
 # Format sampledate as date
