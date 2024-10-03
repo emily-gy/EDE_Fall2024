@@ -81,16 +81,24 @@ EPA.air.PM25.2019$Date <- mdy(EPA.air.PM25.2019$Date)
 
 #4 Select the required columns
 EPA.air.O3.2018_selected <- 
-  EPA.air.O3.2018 %>% select(Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+  EPA.air.O3.2018 %>% select(Date, DAILY_AQI_VALUE, Site.Name, 
+                             AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, 
+                             SITE_LONGITUDE)
 
 EPA.air.O3.2019_selected <- 
-  EPA.air.O3.2019 %>% select(Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+  EPA.air.O3.2019 %>% select(Date, DAILY_AQI_VALUE, Site.Name, 
+                             AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, 
+                             SITE_LONGITUDE)
 
 EPA.air.PM25.2018_selected <- 
-  EPA.air.PM25.2018 %>% select(Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+  EPA.air.PM25.2018 %>% select(Date, DAILY_AQI_VALUE, Site.Name, 
+                               AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, 
+                               SITE_LONGITUDE)
 
 EPA.air.PM25.2019_selected <- 
-  EPA.air.PM25.2019 %>% select(Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+  EPA.air.PM25.2019 %>% select(Date, DAILY_AQI_VALUE, Site.Name, 
+                               AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, 
+                               SITE_LONGITUDE)
 
 #5
 EPA.air.PM25.2018_selected <- EPA.air.PM25.2018_selected %>%
@@ -148,7 +156,12 @@ dim(EPA.air.O3.PM25.2018.2019)
 
 #8 
 EPA.air.O3.PM25.2018.2019 <- EPA.air.O3.PM25.2018.2019 %>% 
-  filter(Site.Name %in% c("Linville Falls", "Durham Armory", "Leggett", "Hattie Avenue",  "Clemmons Middle", "Mendenhall School", "Frying Pan Mountain", "West Johnston Co.", "Garinger High School", "Castle Hayne", "Pitt Agri. Center", "Bryson City", "Millbrook School")) %>% # include the sites in common
+  filter(Site.Name %in% c("Linville Falls", "Durham Armory", "Leggett", 
+                          "Hattie Avenue",  "Clemmons Middle", 
+                          "Mendenhall School", "Frying Pan Mountain", 
+                          "West Johnston Co.", "Garinger High School", 
+                          "Castle Hayne", "Pitt Agri. Center", "Bryson City", 
+                          "Millbrook School")) %>% # include the sites in common
   group_by(Date, Site.Name, AQS_PARAMETER_DESC, COUNTY) %>% # grouping
   summarise(
     meanAQI = mean(DAILY_AQI_VALUE), # mean of AQI, Latitude and Longitude
