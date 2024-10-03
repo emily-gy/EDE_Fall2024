@@ -135,8 +135,8 @@ read.csv(here("./Data/Raw/USGS_Site02085000_Flow_Raw.csv"),stringsAsFactors = TR
 
 # to get the full path
 
-read.csv(home('Data/Raw/USGS_Site02085000_Flow_Raw.csv'))
-###error: could not find function "home"
+read.csv(here('Data/Raw/USGS_Site02085000_Flow_Raw.csv'))
+
 
 ```
 

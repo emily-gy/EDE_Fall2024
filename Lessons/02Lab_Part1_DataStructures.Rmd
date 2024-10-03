@@ -41,11 +41,12 @@ vector1 <- c(1,2,5.3,6,-2,4) # Vector type: Numeric
 vector1
 class(vector1)
 
-vector2 <- c("one","two","three") # Vector type: 
+vector2 <- c("one","two","three") # Vector type:character 
 vector2
+class(vector2)
 
-vector3 <- c(TRUE,TRUE,TRUE,FALSE,TRUE,FALSE) # Vector type:
-vector3
+vector3 <- c(TRUE,TRUE,TRUE,FALSE,TRUE,FALSE) # Vector type: logical
+class(vector3)
 ```
 
 ### Vector Operations
@@ -60,6 +61,7 @@ max(vector1)
 
 #Create another vector of the values 10 thru 15
 vector4 <- c(10:15)
+vector4
 
 # combine vector1 and vector4
 c(vector1, vector4)
@@ -72,7 +74,7 @@ vector1 * vector4
 #
 vector1 * 10
 
-# chnage to upper case
+# change to upper case
 toupper(vector2) 
 
 # give the opposite of vector 3
@@ -110,7 +112,7 @@ matrix1 <- matrix(1:20, nrow = 5,ncol = 4) #
 matrix1
 #matrix1 has __ rows and __ columns
 
-matrix2 <- matrix(1:20, nrow = 5, ncol = 4, byrow = TRUE) #
+matrix2 <- matrix(1:20, nrow = 5, ncol = 4, byrow = TRUE) # filled row by row. if byrow = FALSE, filled by column
 matrix2
 #matrix2 has __ rows and __ columns
 
@@ -124,6 +126,7 @@ matrix3 <- matrix(
     c("un", "deux", "trois", "quatre")
     )
   ) 
+#c: row and column names
 matrix3
 ```
 
