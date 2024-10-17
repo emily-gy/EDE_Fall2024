@@ -40,19 +40,24 @@ library(cowplot)
 getwd()
 
 Peter.Paul.nutrient <- read.csv(
-  file = here("Data/Processed_KEY/NTL-LTER_Lake_Chemistry_Nutrients_PeterPaul_Processed.csv"), stringsAsFactors = T)
+  file = here(
+    "Data/Processed_KEY/NTL-LTER_Lake_Chemistry_Nutrients_PeterPaul_Processed.csv"),
+  stringsAsFactors = T
+)
 Litter <- read.csv(
-  file = here("Data/Processed_KEY/NTL-LTER_Lake_Chemistry_Nutrients_PeterPaul_Processed.csv"), stringsAsFactors = T)
+  file = here(
+    "Data/Processed_KEY/NEON_NIWO_Litter_mass_trap_Processed.csv"), stringsAsFactors = T
+)
 
 #2 
 class(Peter.Paul.nutrient$sampledate)
-class(Litter$sampledate) # both are read in as factors. Change to date
+class(Litter$collectDate) # both are read in as factors. Change to date format
 
 Peter.Paul.nutrient$sampledate <- ymd(Peter.Paul.nutrient$sampledate)
 class(Peter.Paul.nutrient$sampledate)
 
-Litter$sampledate <- ymd(Litter$sampledate)
-class(Litter$sampledate)
+Litter$collectDate <- ymd(Litter$collectDate)
+class(Litter$collectDate) # now both are in date format
 ```
 ## Define your theme
 3. Build a theme and set it as your default theme. Customize the look of at least two of the following: 
@@ -64,6 +69,15 @@ class(Litter$sampledate)
 
 ```{r build plot theme}
 #3
+# define my theme:
+mytheme <- theme_classic(base_size = 10) + 
+  theme(axis.text = element_text(color = "dark grey"), 
+        panel.background = element_rect(fill = "light grey", color = NA),
+        legend.position = "top",
+        plot.title = element_text(size = 13, hjust = 0.5))
+
+#set my theme:
+theme_set(mytheme)
 
 ```
 
@@ -73,10 +87,18 @@ For numbers 4-7, create ggplot graphs and adjust aesthetics to follow best pract
 4. [NTL-LTER] Plot total phosphorus (`tp_ug`) by phosphate (`po4`), with separate aesthetics for Peter and Paul lakes. Add line(s) of best fit using the `lm` method. Adjust your axes to hide extreme values (hint: change the limits using `xlim()` and/or `ylim()`).
 
 ```{r plot total P vs PO4}
-#4 
+#4 generate plot
+phosphorus.phosphate.plot <- 
+  ggplot(Peter.Paul.nutrient, aes(x = tp_ug, y = po4, color = lakename)) +
+  geom_point() +
+  ylim(0, 50) + 
+  geom_smooth(method = lm) +
+  labs(title = "Total Phosphrous vs. Phosphate in Paul Lake and Pater Lake",
+       x = "Phosphate",
+       y = "Total Phosphrous")
+print(phosphorus.phosphate.plot)
 
 ```
-
 
 5. [NTL-LTER] Make three separate boxplots of (a) temperature, (b) TP, and (c) TN, with month as the x axis and lake as a color aesthetic. Then, create a cowplot that combines the three graphs. Make sure that only one legend is present and that graph axes are aligned. 
 
@@ -88,12 +110,53 @@ Tips:
 
 ```{r Create boxplots}
 #5 
+# separate plot 1 temperature
+Peter.Paul.nutrient$month <- as.numeric(Peter.Paul.nutrient$month)
 
+Peter.Paul.nutrient$month <- factor(Peter.Paul.nutrient$month, 
+                                    levels = 1:12, 
+                                    labels = month.abb)
+temperature.plot <- 
+  ggplot(Peter.Paul.nutrient, aes(x = month, y = temperature_C, fill = lakename)) +
+  labs(title = "Temperature by Month",
+       x = "Month",
+       y = "Temperature C") +
+  geom_boxplot()
+print(temperature.plot)
+
+# separate plot 2 TP
+TP.plot <- 
+  ggplot(Peter.Paul.nutrient, aes(x = month, y = tp_ug, fill = lakename)) +
+  labs(title = "Total Phosphros by Month",
+       x = "Month",
+       y = "TP (ug/L)") +
+  geom_boxplot()
+print(TP.plot)
+
+#separate plot 3 TN
+TN.plot <- 
+  ggplot(Peter.Paul.nutrient, aes(x = month, y = tn_ug, fill = lakename)) +
+  labs(title = "Total Nitrogen by Month",
+       x = "Month",
+       y = "TN (ug/L)") +
+  geom_boxplot()
+print(TN.plot)
+
+# combining 3 plots
+temp.TP.TN.plot <- plot_grid(temperature.plot,
+                             TP.plot + theme(legend.position = "none"), 
+                             TN.plot + theme(legend.position = "none"),
+                             ncol = 1,
+                             align = 'v',
+                             axis = 'lr',
+                             label_size = 8
+                             )
+print(temp.TP.TN.plot)
 ```
 
 Question: What do you observe about the variables of interest over seasons and between lakes? 
 
-> Answer: 
+> Answer: Temperature is the highest from July and August for both lakes. Peter Lake has both higher total phosphorus and total nitrogen compared to Peter Lake, especially in June. 
 
 6. [Niwot Ridge] Plot a subset of the litter dataset by displaying only the "Needles" functional group. Plot the dry mass of needle litter by date and separate by NLCD class with a color aesthetic. (no need to adjust the name of each land use)
 
@@ -101,12 +164,36 @@ Question: What do you observe about the variables of interest over seasons and b
 
 ```{r Plot litter}
 #6
+# filter out needle data
+needles.data <- Litter %>% 
+  filter(functionalGroup == "Needles")  %>%
+  mutate(collectDate = as.Date(collectDate)) 
 
+head(needles.data)
+
+needles.plot <- ggplot(needles.data, aes(x = collectDate, y = dryMass, color = nlcdClass)) + 
+  geom_point() +
+  labs(title = "Needles Dry Mass by Date",
+       x = "Date",
+       y = "Day Mass (g)") +
+  scale_color_brewer(palette = "YlGnBu") +
+  scale_x_date(
+    date_breaks = "3 months",
+    date_labels = "%Y"
+  )
+
+print(needles.plot)
 
 #7
+needles.plot.facets <- ggplot(needles.data, aes(x = collectDate, y = dryMass))+
+  geom_point() +
+  labs(title = "Needles Dry Mass by Date and NLCD Class",
+       x = "Date",
+       y = "Day Mass (g)") +
+  facet_wrap(facets = vars(nlcdClass), nrow = 1, ncol = 3)
 
-
+print(needles.plot.facets)
 ```
 Question: Which of these plots (6 vs. 7) do you think is more effective, and why? 
 
-> Answer:
+> Answer: Plot 7 is more efficient because it provides separate graphs for each land cover type. This is easier to read and provides more details than plot 6, where it combines all three types together in one plot.
