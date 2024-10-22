@@ -8,6 +8,9 @@ editor_options:
   chunk_output_type: console
 ---
 
+\listoffigures
+\newpage
+
 ## Objectives
 1. Perform simple data visualizations in the R package `ggplot`
 2. Develop skills to adjust aesthetics and layers in graphs
@@ -19,16 +22,17 @@ Effective data visualization depends on purposeful choices about graph types. Th
 ## Set Up
 
 ```{r, message = FALSE, warning = FALSE}
+getwd()
 library(tidyverse);library(lubridate);library(here)
-library(ggridges)
+library(ggridges) # package for ridge plot: looks distribution of a variable over time
 
 here()
 
 PeterPaul.chem.nutrients <- 
-  read.csv(here("Data/Processed_KEY/NTL-LTER_Lake_Chemistry_Nutrients_PeterPaul_Processed.csv"), stringsAsFactors = TRUE)
+  read.csv(here("Data/Processed/NTL-LTER_Lake_Chemistry_Nutrients_PeterPaul_Processed.csv"), stringsAsFactors = TRUE)
 PeterPaul.chem.nutrients.gathered <-
-  read.csv(here("Data/Processed_KEY/NTL-LTER_Lake_Nutrients_PeterPaulGathered_Processed.csv"), stringsAsFactors = TRUE)
-EPAair <- read.csv(here("Data/Processed_KEY/EPAair_O3_PM25_NC1819_Processed.csv"), stringsAsFactors = TRUE)
+  read.csv(here("Data/Processed/NTL-LTER_Lake_Nutrients_PeterPaulGathered_Processed.csv"), stringsAsFactors = TRUE)
+EPAair <- read.csv(here("Data/Processed/EPAair_O3_PM25_NC1819_Processed.csv"), stringsAsFactors = TRUE)
 
 EPAair$Date <- ymd(EPAair$Date)
 PeterPaul.chem.nutrients$sampledate <- ymd(PeterPaul.chem.nutrients$sampledate)
@@ -76,24 +80,28 @@ Here are some commonly used aesthetic types that can be manipulated in ggplot:
 
 ### Plotting continuous variables over time: Scatterplot and Line Plot
 
-```{r, fig.height = 3, fig.width = 4, warning = FALSE}
+```{r, fig.height = 3, fig.width = 4, warning = FALSE, fig.cap="Figure 1"} 
+# layout for plots generated in this chunk
+
 # Scatterplot
 ggplot(EPAair, aes(x = Date, y = Ozone)) + 
   geom_point()
 
+# generate the same plot in a different way
 O3plot <- ggplot(EPAair) +
   geom_point(aes(x = Date, y = Ozone))
 print(O3plot)
 
-# Fix this code
+# Fix this code (change dots color to blue)
 O3plot2 <- ggplot(EPAair) +
-  geom_point(aes(x = Date, y = Ozone, color = "blue"))
-print(O3plot2)
+  # geom_point(aes(x = Date, y = Ozone, color = "blue")) # however the color is not in blue. when specify color within the aesthetic, it's adding a layer to a plot instead of changing color. correct way:
+  geom_point(aes(x = Date, y = Ozone), color = "blue") # correct
+print(O3plot2) 
 
 # Add additional variables
 # How could you automatically assign a marker color to a variable? 
 PMplot <- 
-  ggplot(EPAair, aes(x = Month, y = PM2.5, shape = as.factor(Year), color = Site.Name)) +
+  ggplot(EPAair, aes(x = Month, y = PM2.5, shape = as.factor(Year), color = Site.Name)) +            # assign different shape and color automatically
   geom_point()
 print(PMplot)
 
@@ -110,7 +118,7 @@ PMplot.faceted2 <-
                   Site.Name == "Bryson City"), 
          aes(x = Month, y = PM2.5)) + 
   geom_point() +
-  facet_grid(Site.Name ~ Year) 
+  facet_grid(Site.Name ~ Year) # Site.Name: row in plot, Year: column in plot
 print(PMplot.faceted2)
 
 # Plot true time series with geom_line
@@ -146,14 +154,15 @@ tempvsdepth <-
   ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth)) +
   #ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth, color = daynum)) +
   geom_point() +
-  scale_y_reverse()
+  scale_y_reverse() # y sacle reversed: 0-20
 print(tempvsdepth)
 
+# relationship of tp_ug and yn_ug
 NvsP <-
   ggplot(PeterPaul.chem.nutrients, aes(x = tp_ug, y = tn_ug, color = depth)) +
   geom_point() +
-  geom_smooth(method = lm) +
-  geom_abline(aes(slope = 16, intercept = 0))
+  geom_smooth(method = lm) +  # lm: linear model, calculate trend line
+  geom_abline(aes(slope = 16, intercept = 0)) # already know the slope
 print(NvsP)
 
 ```
@@ -167,20 +176,19 @@ What might be more effective ways to display the information? Navigate to the bo
 # Box and whiskers plot
 Nutrientplot3 <-
   ggplot(PeterPaul.chem.nutrients.gathered, aes(x = lakename, y = concentration)) +
-  geom_boxplot(aes(color = nutrient)) # Why didn't we use "fill"?
+  geom_boxplot(aes(color = nutrient)) # Why didn't we use "fill"? color:contour; fill:inside of the boxplot
 print(Nutrientplot3)
 
 # Dot plot
 Nutrientplot4 <-
   ggplot(PeterPaul.chem.nutrients.gathered, aes(x = lakename, y = concentration)) +
-  geom_dotplot(aes(color = nutrient, fill = nutrient), binaxis = "y", binwidth = 1, 
-               stackdir = "center", position = "dodge", dotsize = 2) #
+  geom_dotplot(aes(color = nutrient, fill = nutrient), binaxis = "y", binwidth = 1, stackdir = "center", position = "dodge", dotsize = 2) # binaxis: stacking observations over y, position: do not overlay, go to the side
 print(Nutrientplot4)
 
 # Violin plot
 Nutrientplot5 <-
   ggplot(PeterPaul.chem.nutrients.gathered, aes(x = lakename, y = concentration)) +
-  geom_violin(aes(color = nutrient)) #
+  geom_violin(aes(color = nutrient)) # shows density plot
 print(Nutrientplot5)
 
 # Frequency polygons
@@ -191,10 +199,10 @@ Nutrientplot6 <-
   geom_freqpoly(aes(x = tp_ug), color = "darkblue") +
   geom_freqpoly(aes(x = nh34), color = "blue") +
   geom_freqpoly(aes(x = no23), color = "royalblue") +
-  geom_freqpoly(aes(x = po4), color = "red") 
-print(Nutrientplot6)
+  geom_freqpoly(aes(x = po4), color = "red") #specified variable on x and colors 
+print(Nutrientplot6) # no legend; not a good way to generate frequency plot! Just ovelaying on one another
 
-# Using a gathered dataset
+# Using a gathered dataset, where we put all nutrients and concentrations together. Better approach
 Nutrientplot7 <-   
   ggplot(PeterPaul.chem.nutrients.gathered) +
   geom_freqpoly(aes(x = concentration, color = nutrient))
@@ -206,7 +214,7 @@ print(Nutrientplot7)
 # Ridgeline plot
 Nutrientplot6 <-
   ggplot(PeterPaul.chem.nutrients.gathered, aes(y = nutrient, x = concentration)) +
-  geom_density_ridges(aes(fill = lakename), alpha = 0.5) #
+  geom_density_ridges(aes(fill = lakename), alpha = 0.5) # categorized y by nutrient: 5 plots. One color for each lake
 print(Nutrientplot6)
 
 
