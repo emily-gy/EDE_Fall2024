@@ -10,6 +10,11 @@ numericInput(inputId = "n",
              value = 10
              )
 
+numericInput(inputId = "x",
+             label = "Tell me how many cars?", 
+             value = 5
+             )
+
 renderTable(
   {
     head(cars, input$n)
