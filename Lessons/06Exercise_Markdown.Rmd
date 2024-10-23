@@ -25,9 +25,6 @@ nutrient_data_raw <- read.csv(
 nutrient_data_raw$sampledate = ymd(nutrient_data_raw$sampledate)
 
 ```
-```{r}
-
-```
 
 The raw dataset has 'r nrow(nutrient_data_raw)' rows and 'r ncol(nutrient_data_raw)' columns.
 
