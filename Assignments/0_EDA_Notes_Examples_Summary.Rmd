@@ -1,0 +1,113 @@
+---
+title: "EDA Notes and Examples"
+subtitle: "EDE Fall 2024"
+author: "Emily Yang"
+date: "2024-10-22"
+output: pdf_document
+toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Shortcuts
+
+-   add code chunk: Ctrl + Alt + I
+-   pipe: Ctrl + Shift + M
+-   assignment: Alt + -
+
+## r code chunk settings
+
+-   Echo = F: only show the output, not the code
+-   results = "hide", message=FALSE, warning=FALSE: code will run, output won't show
+-   eval = F: code won't run
+-   include = F: run the code but do not show the code
+-   eval = F, include = F: never run and show the code in output
+-   fig.height = 3, fig.width = 5: set absolute size of figure
+-   fig.dim: set both (e.g. fig.dim = c(5,3))
+-   fig.cap = "Figure 1": Figure caption
+-   out.width.out.height: scale figs in output docs (e.g. out.width = 80% is setting at 80% of page width)
+-   fig.align: set alignment
+
+## Import libraries
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(here)
+library(knitr)
+```
+
+## Import data
+
+```{r}
+#Import EPA data (from the processed_KEY folder) & fix dates
+epa_data <- read.csv(
+  here("Data","Processed_KEY","EPAair_O3_PM25_NC1819_Processed.csv"),
+  stringsAsFactors = TRUE) %>% 
+  mutate(Date = ymd(Date))
+```
+
+## Creating tables
+
+General markdown table:
+
+| Item     |                               Value |
+|:---------|------------------------------------:|
+| Filename | EPAair_O3_PM25_NC1819_Processed.csv |
+| Date     |                           2018-2019 |
+| Source   |        EPA Air Quality System (AQS) |
+
+: EPA Air Quality
+
+```{r}
+#Compute mean PM2.5 concentration for each county, sorted by value
+summary_PM25 <- epa_data %>% 
+  drop_na(PM2.5) %>% 
+  group_by(COUNTY) %>% 
+  summarize(mean_PM2.5 = mean(PM2.5)) %>% 
+  arrange(mean_PM2.5)
+
+#Use the `kable` function to produce the 2 tables in markdown format
+knitr::kable(summary_PM25, 
+             caption = "Mean Particulates (2.5mm)", 
+             col.names = c("County", "$\\mu g/m^3$"))
+```
+
+## Creating plots
+
+```{r}
+# Boxplot for ozone levels by month in 2018
+Ozone_2018 <- epa_data %>% 
+  filter(Year == 2018) %>% 
+  drop_na(Ozone)
+
+Ozone_2018$Month <- as.numeric(Ozone_2018$Month)
+Ozone_2018$Month <- factor(Ozone_2018$Month,
+                           levels = 1:12,
+                           labels = month.abb)
+
+Ozone_2018_plot <- 
+  ggplot(Ozone_2018, aes(x = Month, y = Ozone)) +
+  geom_boxplot() +
+  theme_classic() +
+  labs(x = "Month",
+       y = "Ozone Levels (ppm(v))",
+       title = "Ozone by Month in 2018") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(Ozone_2018_plot)
+
+```
+
+## R Markdown
+
+(Also refer to Markdown cheat sheet)
+
+-   Include toc (table of content) and subtitle at the beginning of the report
+-   toc for figures:  + listoffigures
+-   inset a new page:  + newpage
+-   insert tables, images, links, format bullet points
+    -   Help \> Markdown Quick Reference
+    -   [my link] (<http://rmarkdown.rstudio.com>)
