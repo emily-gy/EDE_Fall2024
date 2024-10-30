@@ -102,9 +102,10 @@ ggplot(EPAair, aes(x = Ozone, color = as.factor(Year))) +
 #EPAair$Year will be our categorical variable with two levels (2018 and 2019)
 O3.twosample <- t.test(EPAair$Ozone ~ EPAair$Year)
 O3.twosample
+# p-value = 0.007736, reject null hypothesis (means are the same); also showed means
 
 # Format as a GLM
-O3.twosample2 <- lm(EPAair$Ozone ~ EPAair$Year)
+O3.twosample2 <- lm(EPAair$Ozone ~ EPAair$Year) # or lm(Ozone ~ Year, EPAair)
 summary(O3.twosample2)
 
 ```

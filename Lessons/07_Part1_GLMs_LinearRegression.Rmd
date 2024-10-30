@@ -73,11 +73,12 @@ Important components of the linear regression are the correlation and the R-squa
 For the NTL-LTER dataset, can we predict irradiance (light level) from depth?
 
 ```{r}
+# use lm (linear model)
 irradiance.regression <- 
   lm(PeterPaul.chem.nutrients$irradianceWater ~ 
-       PeterPaul.chem.nutrients$depth)
+       PeterPaul.chem.nutrients$depth) # x (independent): depth; y (dependent): irradianceWater
 
-# another way to format the lm() function
+# another way to format the lm() function (preferred)
 irradiance.regression <- lm(
   data = PeterPaul.chem.nutrients,
   irradianceWater ~ depth)
@@ -96,14 +97,14 @@ An exploratory option to visualize the model fit is to use the function `plot`. 
 
 1. **Residuals vs. Fitted.** The value predicted by the line of best fit is the fitted value, and the residual is the distance of that actual value from the predicted value. By definition, there will be a balance of positive and negative residuals. Watch for drastic asymmetry from side to side or a marked departure from zero for the red line - these are signs of a poor model fit.
 
-2. **Normal Q-Q.** The points should fall close to the 1:1 line. We often see departures from 1:1 at the high and low ends of the dataset, which could be outliers. 
+2. **Normal Q-Q.** Compare residual to a normal distribution, if residual follow normal distribution, the points should fall close to the 1:1 line. We often see departures from 1:1 at the high and low ends of the dataset, which could be outliers. 
 
 3. **Scale-Location.** Similar to the residuals vs. fitted graph, this will graph the squared standardized residuals by the fitted values. 
 
 4. **Residuals vs. Leverage.** This graph will display potential outliers. The values that fall outside the dashed red lines (Cook's distance) are outliers for the model. Watch for drastic departures of the solid red line from horizontal - this is a sign of a poor model fit.
 
 ```{r, fig.height = 3, fig.width = 4}
-par(mfrow = c(2,2), mar=c(4,4,4,4))
+par(mfrow = c(2,2), mar=c(4,4,4,4)) # mfrow: dividing the plot screening into 4 cells like a grid; mar: find limit of the grid
 plot(irradiance.regression)
 par(mfrow = c(1,1))
 ```
@@ -114,7 +115,7 @@ The option best suited for communicating findings is to plot the explanatory and
 # Plot the regression
 irradiancebydepth <- 
   ggplot(PeterPaul.chem.nutrients, aes(x = depth, y = irradianceWater)) +
-  ylim(0, 2000) +
+  ylim(0, 2000) + #set a limit to 2000 to avoid outlier
   geom_point() 
 print(irradiancebydepth) 
 ```

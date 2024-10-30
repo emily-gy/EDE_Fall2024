@@ -52,12 +52,12 @@ summary(Litter.Totals$plotID)
 # not necessarily normality of raw data. See below when we plot the model.
 # shapiro.test() performs the Shapiro-Wilk test of the null that data follows a normal distribution
 
-shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_040"])
+shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_040"]) #p<0.05, reject null
 shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_041"])
-shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_046"])
+shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_046"]) # do not reject
 shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_047"])
 shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_051"])
-shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_057"])
+shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_057"]) # do not reject
 shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_058"])
 shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_061"])
 shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_062"])
@@ -67,17 +67,16 @@ shapiro.test(Litter.Totals$dryMass[Litter.Totals$plotID == "NIWO_067"])
 
 #results: reject null in all except two: NIWO_057 and NIWO_046
 #but method is robust from small deviations from normal distribution
-qqnorm(Litter.Totals$dryMass); qqline(Litter.Totals$dryMass)
+qqnorm(Litter.Totals$dryMass); qqline(Litter.Totals$dryMass) # does not follow normal distribution
 
 # Test for equal variance
-# ANOVA is robust against departures from equal variance.
+# ANOVA is robust against departures from equal variance (one of the assumptions)
 # bartlett.test() performs Bartlett's test of the null that the variances in each of the groups (samples) are the same.
-bartlett.test(Litter.Totals$dryMass ~ Litter.Totals$plotID)
-
+bartlett.test(Litter.Totals$dryMass ~ Litter.Totals$plotID) # p less than 0.05, reject null
 #results: reject null i.e. variances are not equal
 
 # Format ANOVA as aov
-Litter.Totals.anova <- aov(data = Litter.Totals, dryMass ~ plotID)
+Litter.Totals.anova <- aov(data = Litter.Totals, dryMass ~ plotID) # specify continuous and categorical variables
 summary(Litter.Totals.anova)
 
 #results: reject null hypothesis i.e. difference between a pair of group means is statistically significant
@@ -90,13 +89,13 @@ summary(Litter.Totals.anova2)
 # ANOVA is robust against departures from normality.
 plot(Litter.Totals.anova2)
 
-# Post-hoc test
+# Post-hoc test: explore differences between multiple group means
 # TukeyHSD() computes Tukey Honest Significant Differences
 TukeyHSD(Litter.Totals.anova)
 
 # Extract groupings for pairwise relationships
 Litter.Totals.groups <- HSD.test(Litter.Totals.anova, "plotID", group = TRUE)
-Litter.Totals.groups
+Litter.Totals.groups # indicate which groups can have the same mean
 
 # Graph the results
 Litter.Totals.plot <- ggplot(Litter.Totals, aes(x = plotID, y = dryMass)) +
@@ -141,7 +140,7 @@ We may expect the effects of functional group and land cover to be dependent on 
 The output gives test statistics for each explanatory variable as well as the interaction effect of the explanatory variables. If the p-value for the interaction effect is less than 0.05, then we would consider the interaction among the explanatory variables to be significant.
 
 ```{r}
-# Format as aov
+# Format as aov: find relationship between functional group and land cover
 Litter.anova.2way3 <- aov(data = Litter, dryMass ~ functionalGroup * nlcdClass)
 summary(Litter.anova.2way3)
 
