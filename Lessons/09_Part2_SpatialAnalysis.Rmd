@@ -68,17 +68,22 @@ epa_pm25_sites_sf <- read_csv(here('Data/Raw/EPAair_PM25_NC2018_raw.csv')) %>%
     meanPM = mean(`Daily Mean PM2.5 Concentration`,na.rm=T),
     maxPM = max(`Daily Mean PM2.5 Concentration`,na.rm=T)
     ) %>% 
-  st_as_sf(coords = c('SITE_LONGITUDE','SITE_LATITUDE'), crs=4269)
+  st_as_sf(coords = c('SITE_LONGITUDE','SITE_LATITUDE'), crs=4269) #simple feature as spatial feature
 
 #Inspect the object
 class(epa_pm25_sites_sf)
 
 #What is its CRS again?
 st_crs(epa_pm25_sites_sf)
+# If only want to look at epsg
+st_crs(epa_pm25_sites_sf)$epsg
 
 #Plot the data
 ggplot(data=epa_pm25_sites_sf) +
   geom_sf()
+#Color the plot based on meanPM
+ggplot(data=epa_pm25_sites_sf) +
+  geom_sf(aes(color = meanPM))
 ```
 
 ## 2.2 Reading shapefiles into R with `sf`
@@ -116,16 +121,16 @@ mapView(counties_sf)
 
 ```{r read HUCs shapefile}
 #Read the shapefile into an sf dataframe named "huc8_sf"
-huc8_sf <- 
+huc8_sf <- st_read('Data/Spatial/NCHUC8.shp')
 
 #Reveal the column names
-
+colnames(huc8_sf)
 
 #Check the CRS
-
+st_crs(huc8_sf)
 
 #View the data as a map, colored by the acreage in each
-
+mapview(huc8_sf, zcol = 'ACRES')
 
 ```
 
@@ -136,10 +141,19 @@ huc8_sf <-
 
 ```{r Select the Upper Neuse HUC 8}
 #Read the shapefile into an sf dataframe
-
+upper_neuse_sf <- 
+  st_read(here("./Data/Spatial/NCHUC8.shp")) %>% 
+  filter(SUBBASIN == 'Upper Neuse')
 
 #Create a map
-
+mapview(huc8_sf,
+        col.region = 'grey'
+        ) +
+  mapview(
+    upper_neuse_sf,
+    col.region = 'yellow',
+    color = 'blue',
+  )
 
 ```
 
@@ -169,7 +183,7 @@ We'll focus on just a few variables:
     keeping the location attributes as well.
 
 ```{r join.attributes.to.spatial features}
-#Read the 2018 SVI county-level dataset for NC
+#Read the 2018 SVI (social vulnerability index) county-level dataset for NC from a website
 svi2020_nc_raw <- read.csv(
   'https://svi.cdc.gov/Documents/Data/2020/csv/states_counties/NorthCarolina_county.csv',
   colClasses = c('FIPS' = 'factor')) %>% 
@@ -199,12 +213,12 @@ counties_sf_join <- counties_sf %>%
 #View with mapview
 mapview(counties_sf_join, 
         zcol = 'E_POV150', 
-        col.regions = brewer.pal(2, 'RdBu')) + 
-  mapview(epa_pm25_sites_sf, cex = 'maxPM')
+        col.regions = brewer.pal(2, 'RdBu')) +  # specify the color intensity and palette 
+  mapview(epa_pm25_sites_sf, cex = 'maxPM')  #sized by max PM
 
 #view with ggplot
 ggplot() + 
-  geom_sf(data=counties_sf_join,aes(fill = RPL_THEME1),alpha=0.5) + 
+  geom_sf(data = counties_sf_join,aes(fill = RPL_THEME1),alpha=0.5) + 
   scale_fill_gradient2(low="red",high="blue",midpoint = 0.5) + 
   geom_sf(data=epa_pm25_sites_sf) +
   labs(fill='Socio\nEcononomic\nIndex')
@@ -217,13 +231,31 @@ ggplot() +
 
 ```{r}
 #Import data, setting HUC_12 to be factors, and computing a HUC_8 column
+wind_raw <- read.csv(
+  'https://raw.githubusercontent.com/ENV859/EnviroAtlasData/main/Wind_Energy.csv',
+  colClasses = c('HUC_12' = 'factor')) %>% 
+  mutate(huc_8 = substr(HUC_12, 0, 8)) %>% 
+  group_by(huc_8) %>% 
+  summarize(
+    WindEnergy = sum(AvgWindEnergy)
+  )
 
-  
 #Join to HUC_8 features
-
+huc8_wind_sf  <- huc8_sf %>% 
+  left_join(
+    wind_raw, 
+    by = c("HUC_8" = "huc_8") 
+    )
 
 #View the outputs
-
+mapview(huc8_wind_sf, zcol = 'WindEnergy')
+# or with ggplot
+ggplot() + 
+  geom_sf(data=huc8_wind_sf,aes(fill=WindEnergy))+
+  labs(
+    title = "Wind Energy by HUC 8",
+    fill = 'MW/year'
+  )
 
 ```
 
@@ -247,14 +279,17 @@ mapview(state_sf)
 
 ```{r Aggregate the HUC data on an attribute, saving as huc2_sf}
 #List the unique values in the DWQ_Basin field
-
+unique(huc8_sf$DWQ_Basin)
 
 #Summarize on DWQ Basin value
-huc2_sf <- 
-  
+huc2_sf <- huc8_sf %>% 
+  group_by(DWQ_Basin) %>% 
+  summarize(
+    ACRES = sum(ACRES)
+  )
 
 #Map the data
-
+mapview(huc2_sf, zcol = 'ACRES')
 
 ```
 
@@ -280,7 +315,7 @@ On top of projecting any geographic data to adjust for the limitations of the so
 
 ```{r Transform the datasets to other coordinate reference systems}
 #Convert all to UTM Zone 17 (crs = 26917)
-epa_sf_utm <-      st_transform(epa_pm25_sites_sf, crs = 26917)
+epa_sf_utm <-      st_transform(epa_pm25_sites_sf, crs = 26917) # UTM Zone 17N
 counties_sf_utm <- st_transform(counties_sf, crs = 26917)
 state_sf_utm <-    st_transform(state_sf,crs = 26917)
 huc8_sf_utm <-     st_transform(huc8_sf, crs = 26917)
@@ -315,7 +350,8 @@ neuse_intersect <- counties_sf_utm %>%
 myMap + mapview(neuse_intersect, alpha.regions = 0, color='red')
 
 #Actually intersect the counties (not just select those that intersect)
-neuse_counties_sf <- neuse_sf %>% st_intersection(counties_sf_utm)
+neuse_counties_sf <- neuse_sf %>% 
+  st_intersection(counties_sf_utm)
 
 #View the result
 myMap + mapview(neuse_counties_sf, alpha.regions = 0)
@@ -335,13 +371,15 @@ mapview(neuse_counties_sf, zcol='Area_m2')
 triCo <- counties_sf_utm %>% 
   filter(NAME %in% c("Durham","Wake", "Orange", "Chatham")) 
 
-  
+mapview(triCo)
+
 #Grab the intersecting HUC_8s
+huc8_sf_utm %>% 
+  st_filter(triCo) %>% 
+  mapview()
 
-
-
-#Intersect the HUC_8s
-
+#IntersetriCo#Intersect the HUC_8s
+huc8_sf_utm %>% st_intersection(triCo) %>% mapview()
 
 ```
 
@@ -422,8 +460,8 @@ mapView(counties_sf[resultMask,])
 > Questions: how might we use the `st_buffer` function to show all counties within 30km of the site?
 
 ```{r Select counties within a 30 km area from the site}
-
-                            
+the_site_counties <- theSite_sfc_transformed %>% 
+  st_buffer(.,dist=30000)
 ```
 
 # 4. VISUALIZATION
@@ -478,8 +516,8 @@ Tip: See <http://leaflet-extras.github.io/leaflet-providers/> for other basemaps
 leaflet() %>% 
   #addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
   addPolygons(data = counties_WGS84, 
-              color = "orange", 
-              weight = 1, 
+              color = "orange", # boundary color
+              weight = 1,  # boundary width
               smoothFactor = 0.5,   
               opacity = 1.0, 
               fillOpacity = 0.5,

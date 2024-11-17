@@ -64,7 +64,7 @@ sf::sf_use_s2(FALSE)
 
 ```{r Read in road data}
 #Read the GeoJSON file into a spatial dataframe
-GasPlants <- st_read(here('Data/Spatial/Manufactured_Gas_Plant_Sites.geojson'))
+GasPlants <- st_read(here('Data/Spatial/Manufactured_Gas_Plant_Sites.geojson')) # just like read.csv
 
 #Explore as a typical dataframe
 class(GasPlants)
@@ -137,8 +137,8 @@ EPAair.sites <- EPAair %>%
 #Convert to a spatial dataframe
 EPAair.sf <- EPAair.sites %>% 
   st_as_sf(
-    coords = c('mean_Lng','mean_Lat'),
-    crs=4326
+    coords = c('mean_Lng','mean_Lat'), # x is longitude, y is latitude
+    crs=4326 # crs: coordinate reference system 
     )
 
 #Save locally as a shapefile 
@@ -149,6 +149,7 @@ st_write(
   )
 
 #View the sf object using the methods above...
+mapview(EPAair.sf, cex = 'mean_PM25')
 
 ```
 
@@ -165,11 +166,11 @@ class(sfg_GraingerHall)
 mapview(sfg_GraingerHall)
 
 #Upgrade to a simple feature geometry column by adding a crs 
-sfc_GraingerHall <- st_sfc(sfg_GraingerHall,crs=4326)
-class(sfc_GraingerHall)
+sfc_GraingerHall <- st_sfc(sfg_GraingerHall,crs=4326) # sfc: simple feature column
+class(sfc_GraingerHall) #sfc is just a list
 mapview(sfc_GraingerHall)
 
-#Upgrade to a spatial dataframe
+#Upgrade to a spatial dataframe from a list (sfc to sf)
 sf_GraingerHall <- st_as_sf(sfc_GraingerHall)
 sf_GraingerHall$Name = 'Grainger Hall'
 mapview(sf_GraingerHall)
@@ -194,10 +195,10 @@ Let's explore:
 
 ```{r buffer Grainger hall}
 #Buffer Grainger Hall 1 unit
-the_buffer <- sf_GraingerHall %>% st_buffer(1)
+the_buffer <- sf_GraingerHall %>% st_buffer(1) # the 1 unit is degree bc crs = 4326 (WGS84), unit in degrees
 
 #View the result
-mapview(the_buffer)
+mapview(the_buffer) + mapview(sf_GraingerHall, color = 'red') # why oval? we project a circle on a plat map. if on Google Earth as a sphere, it's gonna be like a circle
 ```
 
 A bit odd, no? Why is the circle so big? What is the units of '1'? And why is it oval, not a circle? This has much to do with the fact that the geometric units of our feature are measured in angular units (degrees) and not familiar planar ones (like meters or feet). And that's because latitude and longitude measure location on a sphere, and we like doing calculations on a plane...
@@ -271,12 +272,14 @@ National Center for Ecological Analysis and Synthesis created a CRS summary shee
 Say we want to the distance between our EPA sites and the nearest Gas Plant. We don't want to report the distances in degrees, so we first want to project our data into a projected crs. We'll use the UTM Zone 17 N - WGS84 crs (EPSG = 32617)
 
 ```{r Transform the dataset}
-#Transform the datasets to use UTM 17 N, WGS84
-EPAair.sf.utm <- st_transform(EPAair.sf,32617)
+#Transform the datasets to use UTM 17 N, WGS84 (can be found from the epsg website)
+EPAair.sf.utm <- st_transform(EPAair.sf,32617) 
 GasPlants.utm <- st_transform(GasPlants,32617)
 
 #Have a look at the coordinate associated with the geometries
-EPAair.sf.utm$geometry[1]
+EPAair.sf.utm$geometry[1] # utm use meters, so geometry column number got larger
+# Projected CRS: WGS 84 / UTM zone 17N, why showing WGS 84?
+# - because all projected coordinate reference system has an underlying geographic system
 
 #Plot the data
 ggplot() +
@@ -287,7 +290,7 @@ ggplot() +
 distance_matrix <- st_distance(EPAair.sf.utm, GasPlants.utm, pairwise=T)
 dim(distance_matrix)
 
-#Compute the mean of each row (each EPA site)
+#Compute the mean of each row (each EPA site) to all different gas sites
 mean_distances <-  rowMeans(distance_matrix)
 
 #Compute min distances
