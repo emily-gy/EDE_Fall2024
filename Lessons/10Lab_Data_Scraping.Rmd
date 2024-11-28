@@ -83,9 +83,9 @@ theURL <-
 #Get the data, which starts on line 30
 gage_data <- read.table(
   theURL,
-  skip = 29,
+  skip = 26, #not reading the first 29 lines
   header=TRUE,
-  sep='\t',
+  sep='\t', # separater: tab
   stringsAsFactors = T) 
 
 #Update the column headers
@@ -108,7 +108,32 @@ ggplot(gage_data,aes(x=datetime,y=discharge_cfs)) +
 > Alter the above code so that it plots the last *24* days of flow for gage *02085070*
 
 ```{r EXERCISE - pull.and.plot.other.discharge.data}
+#Set the URL
+theURL <- 
+  'https://waterdata.usgs.gov/nwis/uv?search_site_no=02085070&period=24&format=rdb'
 
+#Get the data, which starts on line 30
+gage_data_eno <- read.table(
+  theURL,
+  skip = 29, 
+  header=TRUE,
+  sep='\t', # separater: tab
+  stringsAsFactors = T) 
+
+#Update the column headers
+colnames(gage_data) = c(
+  "agency_cd", "site_no", "datetime", "tz_cd",
+  "discharge_cfs", "89192_00060_cd", "gage_ht_ft", "89193_00065_cd")
+
+#Tidy the data
+gage_data <- gage_data %>% 
+  select(datetime, discharge_cfs, gage_ht_ft) %>% 
+  mutate(datetime = ymd_hm(datetime))
+
+#Plot
+ggplot(gage_data,aes(x=datetime,y=discharge_cfs)) + 
+  geom_line() +
+  labs(x = "Date",y = "Discharge (cfs)")
 ```
 
 
@@ -138,7 +163,7 @@ scode = "00003"  #mean
 start.date = "1930-10-01"
 end.date = Sys.Date() #Gets today's date
 
-#Load in data using the package's "readNWISdv" function
+#Load in data using the package's "readNWISdv" function (sepcific for NWIS data)
 neuse <- readNWISdv(siteNumbers = siteNo, 
                     parameterCd = pcode, 
                     statCd = scode, 
@@ -174,7 +199,7 @@ You'll also need to look up the IDs of the variables you want to extract. Those 
 #census_api_key("d4ad7874c996c7a83fec0a81466309ddc07d8e22a", install = TRUE)
 
 nc_pop <- 
-  get_acs(geography = "county",
+  get_acs(geography = "county", #get_acs is a command from tidycensus
           variables = "B01003_001",
           state = "NC",
           geometry = TRUE)
@@ -210,16 +235,36 @@ The RVest scraping workflow is as follows:
 
 ```{r EXERCISE - scrape.data.manually eval=FALSE}
 #1 Link to the web site using read_html
-the_website <- 
+the_website <- read_html('https://www.eia.gov/electricity/state/')
 
 #2&3 Locate elements and read their text attributes into variables
-the_states <- 
-the_price <- 
-the_capacity <- 
-net_generation <- 
-total_retail <- 
-  
-#3 Construct a dataframe from the values
+the_states <- 'td:nth-child(1)'
+the_price <- 'td:nth-child(2)'
+the_capacity <- 'td:nth-child(3)'
+net_generation <- 'td:nth-child(4)'
+total_retail <- 'td:nth-child(5)'
+
+the_states <- the_website %>% html_nodes(the_states) %>% html_text()
+the_price <- the_website %>% html_nodes(the_price) %>% html_text()
+the_capacity <- the_website %>% html_nodes('td:nth-child(3)') %>% html_text()
+net_generation <- the_website %>% html_nodes('td:nth-child(4)') %>% html_text()
+total_retail <- the_website %>% html_nodes(total_retail) %>% html_text()
+
+#4 Construct a dataframe from the values. the values are all in text for now
+df_electricity <- data.frame(States = the_states,
+                             Price = the_price, 
+                             Capacity = the_capacity,
+                             Net_Generation = net_generation,
+                             Total_Retail = total_retail)
+#we can convert price to number format using as.numeric, but not for others bc of the commas
+
+# convert and plot the function
+df_electricity <- data.frame(
+  States = the_states,
+  Price = as.numeric(the_price),
+  Capacity = as.numeric(gsub(",","", the_capacity)),
+  Net_Generation = as.numeric(gsub(",","", net_generation)),
+  Total_Retail = as.numeric(gsub(',' , '', total_retail)))
 
 ```
 

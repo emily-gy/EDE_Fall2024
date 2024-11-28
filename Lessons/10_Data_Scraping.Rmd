@@ -93,10 +93,13 @@ When successful, the box should display `.table tr:nth-child(1) td:nth-child(2)`
 With this id known, we can extract it's value in a two-step process. First we use `html_nodes()` to grab the element using its tag. Then we extract the value associated with that element text using the `html_text()` function. 
 
 ```{r scrape.some.data}
-the_registrant <- webpage %>% 
-  html_nodes(".table tr:nth-child(1) td:nth-child(2)") %>% 
+# create the_registrant, which is from the webpage
+the_registrant <- webpage %>%  # go to webpage
+  html_nodes(".table tr:nth-child(1) td:nth-child(2)") %>%  #(1)
   html_text()
 the_registrant
+
+# (1): specify the html_notes: look at the web and find the ones with ".table tr:nth-child(1) td:nth-child(2)", which is the one we copied from the webpage
 ```
 
 EXERCISE:
@@ -106,14 +109,15 @@ In the code chunk below, see if you can extract the Facility Name and Facility T
  -  "tr:nth-child(2) .left~ .left+ td.left"
 
 ```{r scraping.exercise.1}
+# control & click, make sure the ones we want are in green or yellow
 the_facility_name <- webpage %>% 
-  html_nodes() %>% 
+  html_nodes("tr:nth-child(2) th+ .left:nth-child(2)") %>% 
   html_text()
 the_facility_name
 
-the_facility_type <- webpage  
-  
-  
+the_facility_type <- webpage  %>% 
+  html_node("tr:nth-child(2) .left~ .left+ td.left") %>% 
+  html_text()
 the_facility_type
 ```
 
@@ -122,9 +126,9 @@ Next, we'll extract multiple items from the web page into a list object. Using S
 Below is the code to extract average daily withdrawls. Add your code to extract max daily withdrawals into the `max_withdrawals` variable.
 ```{r scraping.multiple.objects}
 avg_withdrawals <- webpage %>% 
-  html_nodes('.table:nth-child(7) td:nth-child(7) , .table:nth-child(7) td:nth-child(3)') %>%
+  html_nodes('.table:nth-child(7) td:nth-child(7) , .table:nth-child(7) td:nth-child(3)') %>% 
   html_text()
-avg_withdrawals
+avg_withdrawals # returns character vector (not numeric values, need to convert later)
 
 max_withdrawals <- webpage %>% 
   html_nodes('.table:nth-child(7) td:nth-child(8) , .table:nth-child(7) td:nth-child(4)') %>%
@@ -138,14 +142,14 @@ max_withdrawals
 Now that we've scraped the data we want into our coding environment, the next step is to wrangle these data into formats we can work with more easily, i.e. a dataframe. Here, we emply the techniques we've learned earlier in this class to do this and then plot the data. 
 ```{r create.dataframe.from.scrapings}
 #Create a dataframe of withdrawals
-df_withdrawals <- data.frame("Month" = rep(1:12),
-                             "Year" = rep(2020,12),
+df_withdrawals <- data.frame("Month" = rep(1:12), # create sequence of numbers
+                             "Year" = rep(2020,12), # vector of repeat of 2020
                              "Avg_Withdrawals_mgd" = as.numeric(avg_withdrawals),
                              "Max_Withdrawals_mgd" = as.numeric(max_withdrawals))
 
 #Modify the dataframe to include the facility name and type as well as the date (as date object)
 df_withdrawals <- df_withdrawals %>% 
-  mutate(Registrant = !!the_registrant,
+  mutate(Registrant = !!the_registrant, # assign variables
          Facility_name = !!the_facility_name,
          Facility_type = !!the_facility_type,
          Date = my(paste(Month,"-",Year)))
@@ -170,11 +174,13 @@ Data! But let's keep going. Next, we'll streamline what we've learned above in a
 This begins by setting the parameters of the page we'll be scraping to variables so we can more easily point to, say, a different facility or a different year. Then we update our other code to use these parameters to scrape the data. 
 
 ```{r streamline.the.process}
+# following code makes the variables (year, facility) easy to change
+
 #Construct the scraping web address, i.e. its URL
 the_base_url <- 'https://www.ncwater.org/WUDC/app/WWATR/report/view'
 the_facility <- '0004-0001'
-the_year <- 2020
-the_scrape_url <- paste0(the_base_url, '/', the_facility, '/', the_year)
+the_year <- 2015
+the_scrape_url <- paste0(the_base_url, '/', the_facility, '/', the_year) # paste0: eliminate adding a space between the elements concatenate into a string
 print(the_scrape_url)
 
 #Retrieve the website contents 
@@ -205,11 +211,10 @@ df_withdrawals <- data.frame("Month" = rep(1:12),
 ggplot(df_withdrawals,aes(x=Date,y=Avg_Withdrawals_mgd)) + 
   geom_line() + 
   geom_smooth(method="loess",se=FALSE) +
-  labs(title = paste("2020 Water usage data for",the_registrant),
+  labs(title = paste(the_year, "Water usage data for",the_registrant),
        subtitle = the_facility_name,
        y="Withdrawal (mgd)",
        x="Date")
-
 ```
 
 Run the above; it should produce the same result as the previous R chunk. HOWEVER, change the year variable to `2015` and re-run the chunk. Change the facility ID to `0218-0238` and run again. Now, we have a nifty little scraping tool!
@@ -220,6 +225,7 @@ We have our code so we can fairly easily scrape any site (if we know its ID) for
 
 ```{r create.our.function}
 #Create our scraping function
+
 scrape.it <- function(the_year, the_facility){
   
   #Retrieve the website contents 
@@ -248,7 +254,8 @@ scrape.it <- function(the_year, the_facility){
            Date = my(paste(Month,"-",Year)))
   
   #Pause for a moment - scraping etiquette
-  #Sys.sleep(1) #uncomment this if you are doing bulk scraping!
+  #Sys.sleep(1) #uncomment this if you are doing bulk scraping! 
+  # make our code run slowly. 1=1 second, avoid website provider to cut access
   
   #Return the dataframe
   return(df_withdrawals)
@@ -271,20 +278,22 @@ my_facility = '0004-0001'
 
 #Use lapply to apply the scrape function
 the_dfs <- lapply(X = the_years,
-                  FUN = scrape.it,
+                  FUN = scrape.it, # 1
                   the_facility=my_facility)
+#1: scrap function, repeat each value in X array and specify the facility
 
-#OR, use purrr's map function
+#OR, use purrr's map function (does the same thing as lapply)
 the_dfs <- map(the_years,scrape.it,the_facility=my_facility)
 
+
 #Conflate the returned dataframes into a single dataframe
-the_df <- bind_rows(the_dfs)
+the_df <- bind_rows(the_dfs) # rbind in tidyverse version
 
 #Plot, because it's fun and rewarding
 ggplot(the_df,aes(x=Date,y=Avg_Withdrawals_mgd)) + 
   geom_line() + 
   geom_smooth(method="loess",se=FALSE) +
-  labs(title = paste("2020 Water usage data for",the_registrant),
+  labs(title = paste(the_years, "Water usage data for",the_registrant),
        subtitle = the_facility_name,
        y="Withdrawal (mgd)",
        x="Date")
@@ -298,7 +307,7 @@ Web crawling refers to navigating within a web site to scrape data across multip
 To do this just takes just a bit of more advanced scripting and scraping. Here we show how you can scrape multiple tags into a list and then "crawl" into each site and grab its data. 
 
 ```{r get.a.list.of.facility.ids}
-#Set the web page
+#Set the web page (the report page)
 the_main_url <- "https://www.ncwater.org/WUDC/app/WWATR/report"
 
 #Pull its contents into our code environment
@@ -328,7 +337,7 @@ This website gives a nice example of this: <https://dcl-prog.stanford.edu/purrr-
 ```{r Scrape.all.2020.data}
 
 #Subset the facilities
-the_facility_ids_subset <-  sample(the_facility_ids,20)
+the_facility_ids_subset <-  sample(the_facility_ids,20) #subset 20
 
 #Create a list of the year we want, the same length as the vector above
 the_years <- rep.int(2020,length(the_facility_ids_subset))
@@ -341,7 +350,7 @@ df_2020 <- bind_rows(dfs_2020)
 
 
 #Plot
-ggplot(df_2020,aes(y = Avg_Withdrawals_mgd, x=Facility_type)) +
+ggplot(df_2020,aes(y = Avg_Withdrawals_mgd, x=Facility_type)) + #x=factor(Month)
   geom_boxplot()
 
 ```
@@ -352,7 +361,7 @@ To scrape for both years and sites, we need to dig deeper into Purrr's map funct
 
 ```{r}
 #Create a subset of facilities
-the_facilities <- sample(the_facility_ids,3)
+the_facilities <- sample(the_facility_ids,3) #random 3 sites
 the_years = c(2018,2019,2020)
 
 #Use the cross2 function to generate a list of unique combos of year and facility ids
