@@ -72,13 +72,12 @@ In the code chunk below scrape these values, assigning them to four separate var
 
 ```{r scrape.the.data}
 #3 
-water_system_name <- website %>% html_nodes('div+ table tr:nth-child(1) td:nth-child(2)') %>% html_text()
+water_system_name <- website %>% html_nodes('div+ table tr:nth-child(1) td:nth-child(2)') %>% html_text() 
 water_system_name
 PWSID <- website %>% html_nodes('td tr:nth-child(1) td:nth-child(5)') %>% html_text()
 PWSID
 ownership <- website %>% html_nodes('div+ table tr:nth-child(2) td:nth-child(4)') %>% html_text()
 ownership
-
 max_daily_use <- website %>% html_nodes('th~ td+ td') %>% html_text()
 max_daily_use
 ```
@@ -97,23 +96,27 @@ max_daily_use
 Month <- website %>% html_nodes(".fancy-table:nth-child(31) tr+ tr th") %>% html_text()
 
 water_df <- data.frame(
-  Water_system = water_system_name,
-  PWSID = PWSID,
-  ownership = ownership,
+  Water_system = rep(water_system_name, length(Month)),
+  PWSID =  rep(PWSID, length(Month)),
+  ownership = rep(ownership, length(Month)),
   max_daily_use = as.numeric(max_daily_use),
   Month = Month
 ) %>% 
-  mutate(Year = rep(2023),
-         Date = as.Date(my(paste(Month, "-", Year))))
+  mutate(Year = 2023,
+         Month = factor(Month, levels = month.abb),
+         Date = as.Date(paste(Year, Month, "1", sep = "-"), 
+                        format = "%Y-%b-%d")) %>% 
+  arrange(Date)
 
-water_df <- water_df[order(water_df$Date),]
 
 #5 
 ggplot(water_df, aes(x = Date, y = max_daily_use)) +
   geom_line() +
-  labs(title = "Maximum Daily Withdrawals (MGD) in 2023",
-       x = "Date",
-       y = "Max Daily Use (MGD)")
+  labs(
+    title = "Maximum Daily Withdrawals (MGD) in 2023",
+    x = "Date",
+    y = "Max Daily Use (MGD)") +
+  mytheme
 
 ```
 
@@ -122,6 +125,45 @@ ggplot(water_df, aes(x = Date, y = max_daily_use)) +
 
 ```{r construct.a.scraping.function}
 #6. 
+scrape.it <- function(Year, PWSID){
+  the_url <-
+    paste0('https://www.ncwater.org/WUDC/app/LWSP/report.php?pwsid=',PWSID, '&year=', Year)
+    print(paste("Scraping URL:", the_url))
+    
+    the_website <- read_html(the_url)
+    
+    water_system_name <- the_website %>% 
+      html_nodes('div+ table tr:nth-child(1) td:nth-child(2)') %>% 
+      html_text()
+    PWSID <- the_website %>% 
+      html_nodes('td tr:nth-child(1) td:nth-child(5)') %>% 
+      html_text()
+    ownership <- the_website %>% 
+      html_nodes('div+ table tr:nth-child(2) td:nth-child(4)') %>% 
+      html_text()
+    max_daily_use <- the_website %>% 
+      html_nodes('th~ td+ td') %>% 
+      html_text()
+    Month <- the_website %>% 
+      html_nodes(".fancy-table:nth-child(31) tr+ tr th") %>% 
+      html_text()
+    
+    water_df <- data.frame(
+      Water_system = rep(water_system_name, length(Month)),
+      PWSID = rep(PWSID, length(Month)),
+      ownership = rep(ownership, length(Month)),
+      max_daily_use = as.numeric(max_daily_use),
+      Month = Month
+    ) %>% 
+      mutate(
+        Year = Year,
+        Month = factor(Month, levels = month.abb),
+        Date = as.Date(paste(Year, Month, "1", sep = "-"), format = "%Y-%b-%d")
+        ) %>%
+      arrange(Date)
+             
+  return(water_df)
+}
 
 
 ```
@@ -130,7 +172,16 @@ ggplot(water_df, aes(x = Date, y = max_daily_use)) +
 
 ```{r fetch.and.plot.Durham.2015.data}
 #7 
+water_data_Durham <- scrape.it(Year = 2015, PWSID = "03-32-010")
+head(water_data_Durham)
 
+ggplot(water_data_Durham, aes(x = Date, y = max_daily_use)) +
+  geom_line() +
+  labs(
+    title = "Durham Maximum Daily Withdrawals (MGD) in 2015",
+    x = "Date",
+    y = "Max Daily Use (MGD)") +
+  mytheme
 
 ```
 
@@ -138,18 +189,139 @@ ggplot(water_df, aes(x = Date, y = max_daily_use)) +
 
 ```{r fetch.and.plot.Asheville.2015.data}
 #8 
+#water_data_Asheville <- scrape.it(Year = 2015, PWSID = "01-11-010")
+#head(water_data_Asheville) 
+# I'm not sure why, but this doesn't retrieve values for Asheville. 
+#I tried multiple times, and the function doesn't work for both Durham and Asheville, 
+# even with the correct scraping URL. 
+#I had to write another function specifically for Asheville to retrieve the data:
+
+website.Ash <- read_html('https://www.ncwater.org/WUDC/app/LWSP/report.php?pwsid=01-11-010&year=2015')
+
+scrape.it.Ash <- function(Year){
+  the_url <-
+    paste0('https://www.ncwater.org/WUDC/app/LWSP/report.php?pwsid=01-11-010&year=', Year)
+    print(paste("Scraping URL:", the_url))
+    
+    website.Ash <- read_html(the_url)
+    
+    water_system_name <- website.Ash %>% 
+      html_nodes('div+ table tr:nth-child(1) td:nth-child(2)') %>% 
+      html_text()
+    PWSID <- website.Ash %>% 
+      html_nodes('td tr:nth-child(1) td:nth-child(5)') %>% 
+      html_text()
+    ownership <- website.Ash %>% 
+      html_nodes('div+ table tr:nth-child(2) td:nth-child(4)') %>% 
+      html_text()
+    max_daily_use <- website.Ash %>% 
+      html_nodes('th~ td+ td') %>% 
+      html_text()
+    Month <- website.Ash %>% 
+      html_nodes(".fancy-table:nth-child(30) tr+ tr th") %>% 
+      html_text()
+    
+    water_df <- data.frame(
+      Water_system = rep(water_system_name, length(Month)),
+      PWSID = rep(PWSID, length(Month)),
+      ownership = rep(ownership, length(Month)),
+      max_daily_use = as.numeric(max_daily_use),
+      Month = Month
+    ) %>% 
+      mutate(
+        Year = Year,
+        Month = factor(Month, levels = month.abb),
+        Date = as.Date(paste(Year, Month, "1", sep = "-"), format = "%Y-%b-%d")
+        ) %>%
+      arrange(Date)
+             
+  return(water_df)
+}
+
+water_data_Asheville <- scrape.it.Ash(Year = 2015)
+head(water_data_Asheville)
+
+
+#Combing the data
+durham_data <- water_data_Durham %>%
+  select(Date, max_daily_use) %>%
+  rename(Durham_Max_Use = max_daily_use)
+
+asheville_data <- water_data_Asheville %>%
+  select(Date, max_daily_use) %>%
+  rename(Asheville_Max_Use = max_daily_use)
+
+combined_data <- full_join(durham_data, asheville_data, by = "Date")
+
+#plot the data
+ggplot(combined_data, aes(x = Date)) +
+  geom_line(aes(y = Durham_Max_Use, color = "Durham"), size = 1) +
+  geom_line(aes(y = Asheville_Max_Use, color = "Asheville"), size = 1) +
+  labs(
+    title = "Comparison of Maximum Daily Withdrawals (MGD) in 2015",
+    x = "Date",
+    y = "Max Daily Use (MGD)",
+    color = "Location"
+  ) +
+  mytheme
 
 
 ```
 
-
-9. Use the code & function you created above to plot Asheville's max daily withdrawal by months for the years 2018 thru 2022.Add a smoothed line to the plot (method = 'loess').
+9. Use the code & function you created above to plot Asheville's max daily withdrawal by months for the years 2018 thru 2022. Add a smoothed line to the plot (method = 'loess').
 
 > TIP: See Section 3.2 in the "10_Data_Scraping.Rmd" where we apply "map2()" to iteratively run a function over two inputs. Pipe the output of the map2() function to `bindrows()` to combine the dataframes into a single one. 
 
 ```{r fetch.and.plot.Asheville.multiyear.data }
 #9 
+scrape.it.Ash <- function(Year){
+  the_url <-
+    paste0('https://www.ncwater.org/WUDC/app/LWSP/report.php?pwsid=01-11-010&year=',
+           Year)
+    
+  print(paste("Scraping URL:", the_url))
+    
+    website.Ash <- read_html(the_url)
+    
+    water_system_name <- website.Ash %>% 
+      html_nodes('div+ table tr:nth-child(1) td:nth-child(2)') %>% 
+      html_text()
+    PWSID <- website.Ash %>% 
+      html_nodes('td tr:nth-child(1) td:nth-child(5)') %>% 
+      html_text()
+    ownership <- website.Ash %>% 
+      html_nodes('div+ table tr:nth-child(2) td:nth-child(4)') %>% 
+      html_text()
+    max_daily_use <- website.Ash %>% 
+      html_nodes('th~ td+ td') %>% 
+      html_text()
+    Month <- website.Ash %>% 
+      html_nodes(".fancy-table:nth-child(30) tr+ tr th") %>% 
+      html_text()
+    
+    water_df <- data.frame(
+      Water_system = rep(water_system_name, length(Month)),
+      PWSID = rep(PWSID, length(Month)),
+      ownership = rep(ownership, length(Month)),
+      max_daily_use = as.numeric(max_daily_use),
+      Month = Month
+    ) %>% 
+      mutate(
+        Year = Year,
+        Month = factor(Month, levels = month.abb),
+        Date = as.Date(paste(Year, Month, "1", sep = "-"), format = "%Y-%b-%d")
+        ) %>%
+      arrange(Date)
+             
+  return(water_df)
+}
 
+#scraping only works for 2019 and 2020. 
+#asheville_2018 <- scrape.it.Ash(Year = 2018)
+asheville_2019 <- scrape.it.Ash(Year = 2019)
+asheville_2020 <- scrape.it.Ash(Year = 2020)
+#asheville_2021 <- scrape.it.Ash(Year = 2021)
+#asheville_2022 <- scrape.it.Ash(Year = 2022)
 
 ```
 
